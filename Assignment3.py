@@ -28,11 +28,56 @@ class Game():
         
     
     def IsTerminal(self,state):
+        if not self.Actions(state):
+            return True
+        else:
+            return False
+    
+
+    def Utility(self,state):
+        if self.isTerminal(state):
+            if self.ToMove(state) == "max": return 1.0
+            if self.ToMove(state) == "min": return -1.0
+        else:
+            if state.numTakenTokens == 0: return 0
+            if state.lastTakenToken == 1: return # count the number of the possible successors (i.e., legal moves). If the count is odd, return 0.5; otherwise, return-0.5.
+            # If last move is a prime, count the multiples of that prime in all possible successors. If the count is odd, return 0.7; otherwise, return-0.7.
+            # If the last move is a composite number (i.e., not prime), find the largest prime that can divide last move, count the multiples of that prime, including the prime number itself if it
+            #   hasn’t already been taken, in all the possible successors. If the count is odd, return 0.6; otherwise, return-0.6.
+
+
         return
     
 
-    def Utility(self,state,position):
-        return
+    def AlphaBetaSearch(self,state):
+        player = self.ToMove(state)
+        value, move = MaxValue(state,float('-inf'),float('inf'))
+        return move
+
+    def MaxValue(self,state,alpha,beta):
+        if state.depth == 0 or self.IsTerminal(state):
+            return self.Utility(state,self.ToMove(state)), None
+        
+        v = float('-inf')
+
+        for action in self.Actions(state):
+            v2,a2 = MinValue(self.Result(state,action),alpha,beta)
+            if v2 > v:
+                v, move = v2,action
+                alpha = max(alpha,v)
+            if v >= beta: return v, move
+        return v, move
+
+    def MinValue(self,state,alpha,beta):
+        if self.IsTerminal(state): return self.Utility(state,self.ToMove(state)), None
+        v = float('inf')
+        for action in self.Actions(self):
+            v2,a2 = MaxValue(self.Result(state,action),alpha,beta)
+            if v2 < v:
+                v,move = v2,action
+                beta = min(beta,v)
+            if v <= alpha: return v,move
+        return v,move
     
     
 
@@ -58,10 +103,6 @@ class State():
 
     
     def takeToken(self,value):
-        if not canTakeToken(value):
-            print("cannot take that token")
-            return
-        
         newState = State(self.numTokens,self.numTakenTokens, self.takenTokens, self.depth)
 
         newState.tokens.remove(value)
@@ -74,9 +115,4 @@ class State():
     
 
 
-
-
-def AlphaBetaSearch():
-
-
-    return action
+state = State(7,0)
