@@ -178,3 +178,31 @@ class Game():
 state = State(7,0,[],0)
 game = Game(state)
 AlphaBetaSearch(game.initialState)
+
+keyword = 'TakeTokens'
+
+
+# Parse the string formatted state
+def parse_string(line):
+    features = line[1:].strip().split()
+    if len(features) > 3:
+        my_list = list()
+
+        for i in features[3:-1]:
+            my_list.append(int(i))
+
+        print( int(features[1]), int(features[2]), my_list, int(features[-1]) )
+
+
+#Grab all testcases from a file
+def get_testcases(filename):
+    testcases = list()
+    try:
+        with open(filename, encoding='utf-8') as f:
+            for line in f:
+                if line.strip().startswith(keyword):
+                    testcases.append(parse_string(line))
+    except FileNotFoundError:
+        print("File does not exist!")
+        sys.exit()
+    return testcases
