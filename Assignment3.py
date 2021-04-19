@@ -5,31 +5,35 @@ class State():
     takenTokens = []
     depth = 0
     tokens = []
-    lastTakenToken = 0
+    lastTakenToken = None
     parentState = None
 
     def __init__(self, numTokens, numTakenTokens, takenTokens, depth):
+        self.tokens = []
         self.numTokens = numTokens
         self.numTakenTokens = numTakenTokens
-        self.takenTokens = takenTokens
-        for i in self.takenTokens:
-            self.TakeToken(i)
+        self.takenTokens = takenTokens.copy()
         self.depth = depth
-
+        if(len(self.takenTokens) > 0):
+            self.lastTakenToken = self.takenTokens[-1]
         for i in range(self.numTokens):
             self.tokens.append(i+1)
+        
+
+        for i in self.takenTokens:
+            self.tokens.remove(i)
+
+        print("state initialized: " + str(self.tokens) + " || depth : " + str(self.depth) + " || takenTokens : " + str(self.takenTokens))
+
+        
         
     
     
     def TakeToken(self,value):
-        newState = State(self.numTokens,self.numTakenTokens, self.takenTokens, self.depth)
-
-        newState.tokens.remove(value)
-        newState.takenTokens.append(value)
-        newState.lastTakenToken = value
-        newState.depth += 1
-        newState.numTokens -= 1
-        newState.numTakenTokens += 1
+        newNumTakenTokens = self.numTakenTokens +1
+        newTakenTokens = self.takenTokens.copy()
+        newTakenTokens.append(value)
+        newState = State(self.numTokens,newNumTakenTokens, newTakenTokens, self.depth + 1)
         newState.parentState = self
         return newState
     
@@ -42,25 +46,35 @@ class Game():
     isTerminal = False
     
     def __init__(self,state):
+        print("Initializing Game")
         self.initialState = state
-        self.actions = self.Actions(self.initialState)
-        self.isTerminal = self.IsTerminal(self.initialState)
+        self.actions = self.Actions(state)
+        self.isTerminal = self.IsTerminal(state)
 
 
     def ToMove(self,state):
-
+        #print("Checking player turn:")
         if state.depth % 2 == 0:
+            print("Max's turn")
             return "max"
-        else: return "min"
+        else: 
+            print("Min's turn")
+            return "min"
     
     def Actions(self,state):
+        #print("Checking for possible actions")
         if state.numTakenTokens == 0:
+            print("First move: valid actions are " + str([i for i in range(1, (state.numTokens+1)//2, 2)]))
             return [i for i in range(1, (state.numTokens+1)//2, 2)]
         else: 
             actions = []
+            #print("Actions: tokens: " + str(state.tokens))
+            #print("Actions: last taken token: " + str(state.lastTakenToken))
+            #print("Actions: num taken tokens: " + str(state.numTakenTokens))
             for i in state.tokens:
-                if state.tokens[i] % state.lastTakenToken == 0 or state.lastTakenToken % state.tokens[i] == 0:
-                    actions.append(state.tokens[i])
+                if i % state.lastTakenToken == 0 or state.lastTakenToken % i == 0:
+                    actions.append(i)
+            print("valid actions are: " + str(actions))
             return actions
                     
     
@@ -72,13 +86,17 @@ class Game():
         
     
     def IsTerminal(self,state):
+        #print("checking for terminal state:")
         if not self.Actions(state):
+            print("state is terminal")
             return True
         else:
+            print("state is not terminal")
             return False
     
 
     def Utility(self,state):
+        #print("Determining utility of state:")
         if self.IsTerminal(state):
             if self.ToMove(state) == "max": return 1.0
             if self.ToMove(state) == "min": return -1.0
@@ -106,6 +124,7 @@ class Game():
                 if count%2 == 0: utility = -0.6
                 else: utility = 0.6 
             
+        #print("utility = " + str(polarity * utility))
         return polarity * utility
     
     def IsPrime(self,num):
@@ -139,6 +158,7 @@ class Game():
         else: return 1
        
     def Successors(self,state):
+        #print("Generating successor states")
         actions = self.Actions(state)
         successors = []
         for action in actions:
@@ -148,10 +168,12 @@ class Game():
     def AlphaBetaSearch(self,state):
         player = self.ToMove(state)
         value, move = self.MaxValue(state,float('-inf'),float('inf'))
+        print("Best move for player: " + str(player) + " is " + str(move))
         return move
 
     def MaxValue(self,state,alpha,beta):
-        if state.depth == 0 or self.IsTerminal(state):
+        #print("Calculating max value")
+        if self.IsTerminal(state):
             return self.Utility(state), None
         
         v = float('-inf')
@@ -165,19 +187,21 @@ class Game():
         return v, move
 
     def MinValue(self,state,alpha,beta):
+        #print("Calculating min value")
         if self.IsTerminal(state): return self.Utility(state), None
         v = float('inf')
-        for action in self.Actions(self):
-            v2,a2 = MaxValue(self.Result(state,action),alpha,beta)
+        for action in self.Actions(state):
+            v2,a2 = self.MaxValue(self.Result(state,action),alpha,beta)
             if v2 < v:
                 v,move = v2,action
                 beta = min(beta,v)
             if v <= alpha: return v,move
         return v,move
     
-state = State(7,0,[],0)
+state = State(8,3,[3,1,2],0)
+
 game = Game(state)
-AlphaBetaSearch(game.initialState)
+game.AlphaBetaSearch(game.initialState)
 
 keyword = 'TakeTokens'
 
