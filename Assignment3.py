@@ -96,8 +96,9 @@ class Game():
     
 
     def Utility(self,state):
-        #print("Determining utility of state:")
+        print("Determining utility of state:")
         if self.IsTerminal(state):
+            print("here")
             if self.ToMove(state) == "max": return 1.0
             if self.ToMove(state) == "min": return -1.0
         else:
@@ -124,22 +125,25 @@ class Game():
                 if count%2 == 0: utility = -0.6
                 else: utility = 0.6 
             
-        #print("utility = " + str(polarity * utility))
+        print("UTILITY = " + str(polarity * utility))
         return polarity * utility
     
     def IsPrime(self,num):
         if num > 1:
         # Iterate from 2 to n / 2
             for i in range(2, int(num/2)+1):
- 
-        # If num is divisible by any number between
-        # 2 and n / 2, it is not prime
+            # If num is divisible by any number between
+            # 2 and n / 2, it is not prime
                 if (num % i) == 0:
+                    print(str(num) + " is not prime")
                     return False
                 break
             else:
+                print(str(num) + " is prime")
                 return True
-        else: return False
+        else: 
+            print(str(num) + " is not prime")
+            return False
 
     def LargestPrime(self,n):
         #Returns all the prime factors of a positive integer
@@ -154,7 +158,10 @@ class Game():
                 if n > 1: factors.append(n)
                 break
             
-        if len(factors) >=1: return max(factors)
+        if len(factors) >=1: 
+            lp = max(factors)
+            print("largest prime factor of " + str(n) + " is " + str(lp))
+            return lp
         else: return 1
        
     def Successors(self,state):
@@ -188,7 +195,8 @@ class Game():
 
     def MinValue(self,state,alpha,beta):
         #print("Calculating min value")
-        if self.IsTerminal(state): return self.Utility(state), None
+        if self.IsTerminal(state): 
+            return self.Utility(state), None
         v = float('inf')
         for action in self.Actions(state):
             v2,a2 = self.MaxValue(self.Result(state,action),alpha,beta)
@@ -198,7 +206,7 @@ class Game():
             if v <= alpha: return v,move
         return v,move
     
-state = State(8,3,[3,1,2],0)
+state = State(7,0,[],0)
 
 game = Game(state)
 game.AlphaBetaSearch(game.initialState)
