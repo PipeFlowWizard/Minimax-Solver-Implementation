@@ -199,7 +199,7 @@ class Game():
 
     def AlphaBetaSearch(self,state):
         player = self.ToMove(state)
-        value, move = self.MaxValue(state,float('-inf'),float('inf'),0)
+        value, move = self.MaxValue(state,float('-inf'),float('inf'),len(state.takenTokens))
         print("Best move for player: " + str(player) + " is " + str(move))
         return move
 
@@ -239,13 +239,6 @@ class Game():
             if v <= alpha:
                 return v,move
         return v,move
-    
-state = State(7,1,[1])
-
-game = Game(state,2)
-game.AlphaBetaSearch(game.initialState)
-
-keyword = 'TakeTokens'
 
 
 # Parse the string formatted state
@@ -272,3 +265,18 @@ def get_testcases(filename):
         print("File does not exist!")
         sys.exit()
     return testcases
+
+
+    
+keyword = 'TakeTokens'
+cases = get_testcases('testcase.txt')
+# cases = get_testcases('testcase_more.txt')
+
+# change case_num to choose the testcase
+case_num = 1
+state = cases[case_num][0]
+depth = cases[case_num][1]
+
+
+game = Game(state,depth)
+game.AlphaBetaSearch(game.initialState)
