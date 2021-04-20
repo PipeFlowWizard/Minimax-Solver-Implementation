@@ -94,7 +94,7 @@ class Game():
         
     
     def IsTerminal(self,state):
-        #print("checking for terminal state:")
+        print("checking for terminal state:")
         if not self.Actions(state):
             print("state is terminal")
             return True
@@ -102,23 +102,31 @@ class Game():
             print("state is not terminal")
             return False
     
-    def IsCutOff(self,depth):
-        if depth > self.searchDepth:
+    def IsCutOff(self,state,depth):
+        if self.searchDepth == 0: 
+            print("no cut off depth")
+            return self.IsTerminal(state)
+        elif depth > self.searchDepth:
+            print("state depth is greater than cutoff depth")
             return True
-        else: return False
+        else: 
+            print("state depth is less than cutoff depth")
+            return False
 
 
     def Utility(self,state):
         print("Determining utility of state:")
+        turn = self.ToMove(state)
         utility = 0
         polarity = 1
         if self.IsTerminal(state):
             print("terminal utility")
-            if self.ToMove(state) == "max": utility = 1.0
-            if self.ToMove(state) == "min": utility = -1.0
+            if turn == "max": utility = 1.0
+            if turn == "min": utility = -1.0
         else:
             print("other utility")
-            polarity = 1 if self.ToMove(state) == "max" else -1
+            polarity = 1 if turn == "max" else -1
+            print("polarity set")
             if 1 in state.tokens: utility = 0
             elif state.lastTakenToken == 1: utility = 0.5 if len(self.Actions(state))%2 !=0 else -0.5 # count the number of the possible successors (i.e., legal moves). If the count is odd, return 0.5; otherwise, return-0.5.
             elif self.IsPrime(state.lastTakenToken): # If last move is a prime, count the multiples of that prime in all possible successors. If the count is odd, return 0.7; otherwise, return-0.7.
@@ -140,10 +148,11 @@ class Game():
                 if count%2 == 0: utility = -0.6
                 else: utility = 0.6 
             
-        print("UTILITY = " + str(polarity * utility))
+        print("UTILITY = " + str(polarity * utility) + " turn: " + str(turn))
         return polarity * utility
     
     def IsPrime(self,num):
+        print("checking if prime")
         if num > 1:
         # Iterate from 2 to n / 2
             for i in range(2, int(num/2)+1):
@@ -162,6 +171,7 @@ class Game():
 
     def LargestPrime(self,n):
         #Returns all the prime factors of a positive integer
+        print("finding largest prime factor")
         factors = []
         d = 2
         while n > 1:
@@ -195,8 +205,8 @@ class Game():
 
     def MaxValue(self,state,alpha,beta,depth):
         print("CALCULATING MAX VALUE OF STATE: " + str(state.tokens) + " at depth " + str(state.depth))
-        print("Checking if state is terminal | alpha: " + str(alpha) + " | beta: " + str(beta))
-        if self.IsCutOff(depth):
+        print("Checking if state above cutoff | alpha: " + str(alpha) + " | beta: " + str(beta))
+        if self.IsCutOff(state,depth):
             return self.Utility(state), None
         print("Searching children of state: " + str(state.tokens))
         
@@ -215,7 +225,7 @@ class Game():
     def MinValue(self,state,alpha,beta,depth):
         print("CALCULATING MIN VALUE OF STATE: " + str(state.tokens) + " at depth " + str(state.depth))
         print("Checking if state is terminal | alpha: " + str(alpha) + " | beta: " + str(beta))
-        if self.IsCutOff(depth): 
+        if self.IsCutOff(state,depth): 
             return self.Utility(state), None
         print("Searching children of state: " + str(state.tokens))
         v = float('inf')
@@ -230,9 +240,9 @@ class Game():
                 return v,move
         return v,move
     
-state = State(7,0,[])
+state = State(7,1,[1])
 
-game = Game(state,0)
+game = Game(state,2)
 game.AlphaBetaSearch(game.initialState)
 
 keyword = 'TakeTokens'
