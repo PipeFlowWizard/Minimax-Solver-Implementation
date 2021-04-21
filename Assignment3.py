@@ -3,39 +3,34 @@ class State():
     numTokens = 0
     numTakenTokens = 0
     takenTokens = []
-    depth = 0
     tokens = []
     lastTakenToken = None
-    parentState = None
+
 
     def __init__(self, numTokens, numTakenTokens, takenTokens):
         self.tokens = []
         self.numTokens = numTokens
         self.numTakenTokens = numTakenTokens
         self.takenTokens = takenTokens.copy()
-        self.depth = 0
+
         if(len(self.takenTokens) > 0):
             self.lastTakenToken = self.takenTokens[-1]
         for i in range(self.numTokens):
             self.tokens.append(i+1)
-        
-
         for i in self.takenTokens:
             self.tokens.remove(i)
 
 
         
     def TakeToken(self,value):
-        newNumTakenTokens = self.numTakenTokens +1
+        newNumTakenTokens = self.numTakenTokens + 1
         newTakenTokens = self.takenTokens.copy()
         newTakenTokens.append(value)
         newState = State(self.numTokens,newNumTakenTokens, newTakenTokens)
-        newState.depth = self.depth +1
-        newState.parentState = self
         return newState
     
     def print(self):
-        print("state: " + str(self.tokens) + " || takenTokens : " + str(self.takenTokens) + " || depth : " + str(self.depth))
+        print("state: " + str(self.tokens) + " || takenTokens : " + str(self.takenTokens) + " || depth : " + str(self.numTakenTokens))
 
     
 
@@ -44,6 +39,9 @@ class Game():
 
     initialState = None
     searchDepth = 0
+    numNodesEvaluated = 0
+    maxDepthReached = 0
+    numNodesVisited = 0
     
     def __init__(self,state,searchDepth):
         print("Initializing Game")
@@ -54,7 +52,7 @@ class Game():
 
     def ToMove(self,state):
         #print("Checking player turn:")
-        if state.depth % 2 == 0:
+        if state.numTakenTokens % 2 == 0:
             print("Max's turn")
             return "max"
         else: 
@@ -83,13 +81,14 @@ class Game():
         if action in self.Actions(state):
             print()
             print("--------------------------------------------------------------------")
-            print("taking token:" + str(action) + " at depth:" + str(state.depth))
+            print("taking token:" + str(action) + " at depth:" + str(state.numTakenTokens))
             resultState = state.TakeToken(action)
             print(str(action) + " removed from State: " + str(state.tokens))
             print("Result: ", end = '')
             resultState.print()
             print("--------------------------------------------------------------------")
             print()
+            self.numNodesVisited += 1
             return resultState
         
     
@@ -106,7 +105,7 @@ class Game():
         if self.searchDepth == 0: 
             print("no cut off depth")
             return self.IsTerminal(state)
-        elif depth > self.searchDepth:
+        elif depth > self.searchDepth or self.IsTerminal(state):
             print("state depth is greater than cutoff depth")
             return True
         else: 
@@ -115,20 +114,22 @@ class Game():
 
 
     def Utility(self,state):
+        self.numNodesEvaluated += 1
         print("Determining utility of state:")
         turn = self.ToMove(state)
         utility = 0
         polarity = 1
         if self.IsTerminal(state):
             print("terminal utility")
-            if turn == "max": utility = 1.0
-            if turn == "min": utility = -1.0
+            if turn == "max": utility = -1.0
+            if turn == "min": utility = 1.0
         else:
             print("other utility")
             polarity = 1 if turn == "max" else -1
             print("polarity set")
             if 1 in state.tokens: utility = 0
-            elif state.lastTakenToken == 1: utility = 0.5 if len(self.Actions(state))%2 !=0 else -0.5 # count the number of the possible successors (i.e., legal moves). If the count is odd, return 0.5; otherwise, return-0.5.
+            elif state.lastTakenToken == 1: 
+                utility = 0.5 if len(self.Actions(state))%2 !=0 else -0.5 # count the number of the possible successors (i.e., legal moves). If the count is odd, return 0.5; otherwise, return-0.5.
             elif self.IsPrime(state.lastTakenToken): # If last move is a prime, count the multiples of that prime in all possible successors. If the count is odd, return 0.7; otherwise, return-0.7.
                 count = 0
                 for successor in self.Successors(state):
@@ -152,7 +153,7 @@ class Game():
         return polarity * utility
     
     def IsPrime(self,num):
-        print("checking if prime")
+        print("-Checking if: " + str(num) + " is prime-")
         if num > 1:
         # Iterate from 2 to n / 2
             for i in range(2, int(num/2)+1):
@@ -171,7 +172,7 @@ class Game():
 
     def LargestPrime(self,n):
         #Returns all the prime factors of a positive integer
-        print("finding largest prime factor")
+        print("-Finding largest prime factor-")
         factors = []
         d = 2
         while n > 1:
@@ -201,10 +202,15 @@ class Game():
         player = self.ToMove(state)
         value, move = self.MaxValue(state,float('-inf'),float('inf'),len(state.takenTokens))
         print("Best move for player: " + str(player) + " is " + str(move))
+        print("Value: " + str(value))
+        print("Number of Nodes Visited: " + str(self.numNodesVisited))
+        print("Number of Nodes Evaluated: " + str(self.numNodesEvaluated))
+        print("Max Depth Reached: " + str(self.maxDepthReached))
         return move
 
     def MaxValue(self,state,alpha,beta,depth):
-        print("CALCULATING MAX VALUE OF STATE: " + str(state.tokens) + " at depth " + str(state.depth))
+        if depth > self.maxDepthReached: self.maxDepthReached = depth
+        print("CALCULATING MAX VALUE OF STATE: " + str(state.tokens) + " at depth " + str(state.numTakenTokens))
         print("Checking if state above cutoff | alpha: " + str(alpha) + " | beta: " + str(beta))
         if self.IsCutOff(state,depth):
             return self.Utility(state), None
@@ -220,63 +226,67 @@ class Game():
                 alpha = max(alpha,v)
             if v >= beta:
                 return v, move
+            
         return v, move
 
     def MinValue(self,state,alpha,beta,depth):
-        print("CALCULATING MIN VALUE OF STATE: " + str(state.tokens) + " at depth " + str(state.depth))
-        print("Checking if state is terminal | alpha: " + str(alpha) + " | beta: " + str(beta))
+        if depth > self.maxDepthReached: self.maxDepthReached = depth
+        print("CALCULATING MIN VALUE OF STATE: " + str(state.tokens) + " at depth " + str(state.numTakenTokens))
+        print("Checking if state is above cutoff | alpha: " + str(alpha) + " | beta: " + str(beta))
         if self.IsCutOff(state,depth): 
             return self.Utility(state), None
         print("Searching children of state: " + str(state.tokens))
+        
         v = float('inf')
-
-        actions = self.Actions(state)
-        for action in actions:
+        
+        for action in self.Actions(state):
             v2,a2 = self.MaxValue(self.Result(state,action),alpha,beta,depth+1)
             if v2 < v:
                 v,move = v2,action
                 beta = min(beta,v)
             if v <= alpha:
                 return v,move
+        
         return v,move
 
 
-# Parse the string formatted state
-def parse_string(line):
-    features = line[1:].strip().split()
-    if len(features) > 3:
-        my_list = list()
 
-        for i in features[3:-1]:
-            my_list.append(int(i))
+state = State(7,1,[1])
+game = Game(state,2)
+game.AlphaBetaSearch(game.initialState)
 
-        print( int(features[1]), int(features[2]), my_list, int(features[-1]) )
+# #Parse the string formatted state
+# def parse_string(line):
+#     features = line[1:].strip().split()
+#     if len(features) > 3:
+#         my_list = list()
+
+#         for i in features[3:-1]:
+#             my_list.append(int(i))
+
+#         print( int(features[1]), int(features[2]), my_list, int(features[-1]) )
 
 
-#Grab all testcases from a file
-def get_testcases(filename):
-    testcases = list()
-    try:
-        with open(filename, encoding='utf-8') as f:
-            for line in f:
-                if line.strip().startswith(keyword):
-                    testcases.append(parse_string(line))
-    except FileNotFoundError:
-        print("File does not exist!")
-        sys.exit()
-    return testcases
+# #Grab all testcases from a file
+# def get_testcases(filename):
+#     testcases = list()
+#     try:
+#         with open(filename, encoding='utf-8') as f:
+#             for line in f:
+#                 if line.strip().startswith(keyword):
+#                     testcases.append(parse_string(line))
+#     except FileNotFoundError:
+#         print("File does not exist!")
+#         sys.exit()
+#     return testcases
 
 
     
-keyword = 'TakeTokens'
-cases = get_testcases('testcase.txt')
-# cases = get_testcases('testcase_more.txt')
+# keyword = 'TakeTokens'
+# cases = get_testcases('testcase.txt')
+# # cases = get_testcases('testcase_more.txt')
 
-# change case_num to choose the testcase
-case_num = 1
-state = cases[case_num][0]
-depth = cases[case_num][1]
-
-
-game = Game(state,depth)
-game.AlphaBetaSearch(game.initialState)
+# # change case_num to choose the testcase
+# case_num = 1
+# state = cases[case_num][0]
+# depth = cases[case_num][1]
