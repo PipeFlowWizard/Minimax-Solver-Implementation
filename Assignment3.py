@@ -47,6 +47,7 @@ class Game():
         print("Initializing Game")
         self.initialState = state
         self.searchDepth = searchDepth
+        self.numNodesVisited = 1
 
 
 
@@ -117,25 +118,22 @@ class Game():
         self.numNodesEvaluated += 1
         print("Determining utility of state:")
         turn = self.ToMove(state)
-        utility = 0
-        polarity = 1
         if self.IsTerminal(state):
             print("terminal utility")
-            if turn == "max": utility = -1.0
-            if turn == "min": utility = 1.0
+            if turn == "max": return -1.0
+            elif turn == "min": return  1.0
         else:
-            print("other utility")
-            polarity = 1 if turn == "max" else -1
-            print("polarity set")
+            print("cutoff utility")
+
             if 1 in state.tokens: utility = 0
             elif state.lastTakenToken == 1: 
-                utility = 0.5 if len(self.Actions(state))%2 !=0 else -0.5 # count the number of the possible successors (i.e., legal moves). If the count is odd, return 0.5; otherwise, return-0.5.
+                utility = -0.5 if len(self.Actions(state))%2 ==0 else 0.5 # count the number of the possible successors (i.e., legal moves). If the count is odd, return 0.5; otherwise, return-0.5.
             elif self.IsPrime(state.lastTakenToken): # If last move is a prime, count the multiples of that prime in all possible successors. If the count is odd, return 0.7; otherwise, return-0.7.
                 count = 0
                 for successor in self.Successors(state):
                     #check multiples of last token in successor
                     for i in successor.tokens:
-                        if i%state.lastTakenToken == 0: count += 1
+                            if i%state.lastTakenToken == 0: count += 1
                 if count%2 == 0: utility = -0.7
                 else: utility = 0.7 
             else: # If the last move is a composite number (i.e., not prime), find the largest prime that can divide last move
@@ -148,7 +146,8 @@ class Game():
                         if i%lp == 0: count += 1
                 if count%2 == 0: utility = -0.6
                 else: utility = 0.6 
-            
+        
+        polarity = -1 if turn == "max" else 1
         print("UTILITY = " + str(polarity * utility) + " turn: " + str(turn))
         return polarity * utility
     
@@ -200,23 +199,29 @@ class Game():
 
     def AlphaBetaSearch(self,state):
         player = self.ToMove(state)
-        value, move = self.MaxValue(state,float('-inf'),float('inf'),len(state.takenTokens))
+        if player == "max":
+            value, move = self.MaxValue(state,float('-inf'),float('inf'),0) #len(state.takenTokens))
+        else: 
+            value, move = self.MinValue(state,float('-inf'),float('inf'), 0) # len(state.takenTokens))
         print("Best move for player: " + str(player) + " is " + str(move))
         print("Value: " + str(value))
         print("Number of Nodes Visited: " + str(self.numNodesVisited))
         print("Number of Nodes Evaluated: " + str(self.numNodesEvaluated))
         print("Max Depth Reached: " + str(self.maxDepthReached))
+        branchingFactor = (self.numNodesVisited - 1)/(self.numNodesVisited - self.numNodesEvaluated)
+        print("Branching Factor: " + str(branchingFactor))
         return move
 
     def MaxValue(self,state,alpha,beta,depth):
-        if depth > self.maxDepthReached: self.maxDepthReached = depth
+        if depth > self.maxDepthReached: 
+            self.maxDepthReached = depth
         print("CALCULATING MAX VALUE OF STATE: " + str(state.tokens) + " at depth " + str(state.numTakenTokens))
         print("Checking if state above cutoff | alpha: " + str(alpha) + " | beta: " + str(beta))
         if self.IsCutOff(state,depth):
             return self.Utility(state), None
         print("Searching children of state: " + str(state.tokens))
         
-        v = float('-inf')
+        v =  float('-inf')
 
         actions = self.Actions(state)
         for action in actions:
@@ -251,42 +256,6 @@ class Game():
 
 
 
-state = State(7,1,[1])
-game = Game(state,2)
+state = State(10,5,[3,1,8,4,2])
+game = Game(state,0)
 game.AlphaBetaSearch(game.initialState)
-
-# #Parse the string formatted state
-# def parse_string(line):
-#     features = line[1:].strip().split()
-#     if len(features) > 3:
-#         my_list = list()
-
-#         for i in features[3:-1]:
-#             my_list.append(int(i))
-
-#         print( int(features[1]), int(features[2]), my_list, int(features[-1]) )
-
-
-# #Grab all testcases from a file
-# def get_testcases(filename):
-#     testcases = list()
-#     try:
-#         with open(filename, encoding='utf-8') as f:
-#             for line in f:
-#                 if line.strip().startswith(keyword):
-#                     testcases.append(parse_string(line))
-#     except FileNotFoundError:
-#         print("File does not exist!")
-#         sys.exit()
-#     return testcases
-
-
-    
-# keyword = 'TakeTokens'
-# cases = get_testcases('testcase.txt')
-# # cases = get_testcases('testcase_more.txt')
-
-# # change case_num to choose the testcase
-# case_num = 1
-# state = cases[case_num][0]
-# depth = cases[case_num][1]
