@@ -1,3 +1,6 @@
+import time
+import sys
+
 class State():
 
     numTokens = 0
@@ -42,12 +45,16 @@ class Game():
     numNodesEvaluated = 0
     maxDepthReached = 0
     numNodesVisited = 0
+    searchTime = 10
+    startTime = 0
     
     def __init__(self,state,searchDepth):
         print("Initializing Game")
         self.initialState = state
         self.searchDepth = searchDepth
         self.numNodesVisited = 1
+        self.searchTime = 10
+        self.startTime = time.time()
 
 
 
@@ -203,16 +210,29 @@ class Game():
             value, move = self.MaxValue(state,float('-inf'),float('inf'),0) #len(state.takenTokens))
         else: 
             value, move = self.MinValue(state,float('-inf'),float('inf'), 0) # len(state.takenTokens))
-        print("Best move for player: " + str(player) + " is " + str(move))
+        
+        if value == None and move == None: return
+
+        print()
+        print("Execution Time: " + str(time.time() - self.startTime))
+        print("---------------------------------------------------------")
+        print()
+        print("Move:" + str(move))
         print("Value: " + str(value))
         print("Number of Nodes Visited: " + str(self.numNodesVisited))
         print("Number of Nodes Evaluated: " + str(self.numNodesEvaluated))
         print("Max Depth Reached: " + str(self.maxDepthReached))
         branchingFactor = (self.numNodesVisited - 1)/(self.numNodesVisited - self.numNodesEvaluated)
         print("Branching Factor: " + str(branchingFactor))
+        print()
+        print("---------------------------------------------------------")
+        print()
         return move
 
     def MaxValue(self,state,alpha,beta,depth):
+        if time.time() - self.startTime > self.searchTime:
+            print("Search Time Exceeded")
+            return None, None
         if depth > self.maxDepthReached: 
             self.maxDepthReached = depth
         print("CALCULATING MAX VALUE OF STATE: " + str(state.tokens) + " at depth " + str(state.numTakenTokens))
@@ -226,6 +246,7 @@ class Game():
         actions = self.Actions(state)
         for action in actions:
             v2,a2 = self.MinValue(self.Result(state,action),alpha,beta,depth+1)
+            if v2 == None and a2 == None: return None, None
             if v2 > v:
                 v, move = v2,action
                 alpha = max(alpha,v)
@@ -235,6 +256,10 @@ class Game():
         return v, move
 
     def MinValue(self,state,alpha,beta,depth):
+        if time.time() - self.startTime > self.searchTime:
+            print("Search Time Exceeded")
+            return None, None
+
         if depth > self.maxDepthReached: self.maxDepthReached = depth
         print("CALCULATING MIN VALUE OF STATE: " + str(state.tokens) + " at depth " + str(state.numTakenTokens))
         print("Checking if state is above cutoff | alpha: " + str(alpha) + " | beta: " + str(beta))
@@ -246,6 +271,7 @@ class Game():
         
         for action in self.Actions(state):
             v2,a2 = self.MaxValue(self.Result(state,action),alpha,beta,depth+1)
+            if v2 == None and a2 == None: return None, None
             if v2 < v:
                 v,move = v2,action
                 beta = min(beta,v)
@@ -254,8 +280,21 @@ class Game():
         
         return v,move
 
+def parse():
+    nt =  int(sys.argv[1])
+    ntt = int(sys.argv[2])
+    tt = [int(i) for i in sys.argv[3:-1]]
+    sd = int(sys.argv[-1])   
+    newState = State(nt,ntt,tt if ntt != 0 else [])
+    newGame = Game(newState,sd)
+    newGame.AlphaBetaSearch(newGame.initialState)
 
 
-state = State(10,5,[3,1,8,4,2])
-game = Game(state,0)
-game.AlphaBetaSearch(game.initialState)
+
+# state = State(10,5,[3,1,8,4,2])
+# game = Game(state,0)
+# game.AlphaBetaSearch(game.initialState)
+
+
+parse()
+
