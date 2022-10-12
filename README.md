@@ -1,2 +1,2 @@
-# Assignment3
+# Minimax Solver Implementation
  https://github.com/PipeFlowWizard/Assignment3
